@@ -1,0 +1,48 @@
+job("task6_job1"){
+    description("Download Data From Github And Create Docker Image")
+	scm{
+		github('fayazlinux/dev-task6' , 'master')
+	}
+	triggers{
+		scm(" * * * * * ")
+	}
+	steps{
+		shell('''
+sudo cp -v  * /root/task6/
+status=$(sudo ls -lh  /root/task6/  | sudo grep *.php)
+if [[ $status==0 ]]; 
+then 
+    if sudo kubectl  get pods  | sudo grep ^myweb
+    then
+
+    echo " already running " 
+    sudo  sh  /root/task6/test.sh     
+
+    else
+
+    sudo kubectl create deployment   myweb --image=vimal13/apache-webserver-php ;
+    sudo kubectl  expose deployment  myweb  --port=80   --type=NodePort;
+    kk=`sudo /usr/local/bin/minikube   service myweb --url` ;
+    sudo echo "Please Note the URL of your WEbSITE:  $kk"  | sudo  mail  -s "WEB URL" fayazlinux@gmail.com    ;
+    fi;
+sudo /usr/local/bin/minikube   service myweb --url > /tmp/url.txt  ;
+fi;''')
+	}
+}
+
+
+
+job("task6_job2"){
+    description("Testing Application")
+	triggers{
+		upstream('task6_job1' , 'SUCCESS')
+	}
+	steps{
+		shell(''' 
+#!/bin/bash
+statusip=`cat /tmp/url.txt  | awk -F "//" '{ print$2 }'`  
+status2=$(curl -o /dev/null -s    -w "%{http_code}" {$statusip})
+if [[ $status2 == 200 ]]  ; then  echo " File is working fine " ; else echo "500 Error Please check " | mail -s "webs server " fayazlinux@gmail.com   ; 
+fi;''')
+	}
+}
