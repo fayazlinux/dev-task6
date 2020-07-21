@@ -1,4 +1,4 @@
 <?php
-print ( " LINUX  FOR EVERYONE   ")
+print ( " LINUX  FOR EVERYONE :!!  ")
 ?>
 
